@@ -1,7 +1,8 @@
 ﻿// AixClient.cpp: define el punto de entrada de la aplicación.
 //
 
-#include "AixClient.h"
+#include "Server.h"
+#include <AixCommon/Common.h>
 
 using namespace std;
 

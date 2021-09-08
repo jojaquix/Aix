@@ -11,14 +11,14 @@ endif()
 FetchContent_MakeAvailable(googletest)
 
 
-
-
 add_executable(
   UTests
   BasicTests.cpp
 )
 target_link_libraries(
   UTests
+  asio
+  cxx_settings
   gtest_main
 )
 

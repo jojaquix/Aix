@@ -3,6 +3,7 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
+include("CMake/common.cmake")
 
 function(generateDeps)
 	include(FetchContent)
@@ -22,14 +23,13 @@ function(generateDeps)
 	target_include_directories(asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
 endfunction()
 
+
 function(Main)
 	project ("Aix")
-	set(CMAKE_CXX_STANDARD 17)
-
-
+	
 	generateDeps()
-
-	# Incluya los subproyectos.
+	add_subdirectory ("AixCommon")
+	add_subdirectory ("AixServer")
 	add_subdirectory ("AixClient")
 	add_subdirectory ("UTests")
 
