@@ -1,8 +1,16 @@
-﻿// AixClient.h: archivo de inclusión para archivos de inclusión estándar del sistema,
-// o archivos de inclusión específicos de un proyecto.
-
-#pragma once
-
+﻿#pragma once
+#include <AixCommon/Common.h>
+#include <AixCommon/AbsClient.h>
 #include <iostream>
 
-// TODO: Haga referencia aquí a los encabezados adicionales que el programa requiere.
+namespace aix {
+	
+	class Client : public AbsClient<int> {
+	public:
+
+		
+
+	};
+
+
+}

@@ -4,9 +4,7 @@
 #include <iostream>
 
 namespace aix {
-	
-
-	
+		
 	class Server: public AbsServer<int> {
 		public:
 

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <AixServer/Server.h>
-
+#include <AixClient/Client.h>
 
 //for testing
 using namespace aix;
@@ -14,10 +14,19 @@ TEST(BasicTests, BasicAssertions) {
 	EXPECT_EQ(7 * 6, 42);
 }
 
+TEST(BasicTests, BasicClientTest) {
+	Client client;
+
+
+}
+
+
 TEST(BasicTests, BasicServerTest) {
-	EXPECT_EQ(7 * 6, 42);
 	Server server(8765);
 	server.start();
+	Client client;
+	client.connect(8765, "localhost");
+
 	getchar();
 	server.stop();
 

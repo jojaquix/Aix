@@ -20,14 +20,14 @@ namespace aix {
 		}
 
 		//run on server thread
-		virtual bool onClientConnect(std::shared_ptr<conn<T>>) {
+		virtual bool onClientConnect(std::shared_ptr<connection<T>>) {
 			return false;
 		}
 
 		bool start() {
 			try
 			{
-				waitForConnection();
+				asyncWaitForConnection();
 				// todo i want to change this to use a thread pool 
 				theThread = std::thread([this]() { asioContext.run(); });
 			}
@@ -41,15 +41,15 @@ namespace aix {
 			return true;
 		}
 
-		// [async] 
-		void waitForConnection() {
+		// [async]
+		void asyncWaitForConnection() {
 			asioAcceptor.async_accept(
 				[this](std::error_code ec, asio::ip::tcp::socket socket) {
 					if (!ec)
 					{					
 						std::cout << "[AixServer::Trace] New Connection Ok: " << socket.remote_endpoint() << "\n";
 						// Socket Wrapper conn to handle the client
-						auto newconn = std::make_shared<conn<T>>(asioContext, std::move(socket));
+						auto newconn = std::make_shared<connection<T>>(asioContext, std::move(socket));
 						if (onClientConnect(newconn)) {
 							//todo store new connection in some place
 							//container to allow us 
@@ -66,7 +66,7 @@ namespace aix {
 
 					// Prime the asio context with more work - again simply wait for
 					// another connection...
-					waitForConnection();
+					asyncWaitForConnection();
 				});
 		}
 
@@ -81,7 +81,7 @@ namespace aix {
 
 		//Server receive a message and send message as response
 		//virtual message<T> onMessageIn(message<T>& msg) { return msg }
-	private:
+	protected:
 		asio::io_context asioContext;
 		std::thread theThread;
 		asio::ip::tcp::acceptor asioAcceptor;
