@@ -1,4 +1,4 @@
-#include<AixCommon/AixCommon.h>
+#include<AixCommon/Common.h>
 
 namespace aix {
 	template <typename T>
@@ -13,7 +13,7 @@ namespace aix {
 	{
 		mheader<T> header{};
 		std::vector<uint8_t> body;
-
+		
 		template<typename DataType>
 		friend message<T>& operator << (message<T>& msg, const DataType& data)
 		{

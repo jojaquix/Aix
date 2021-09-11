@@ -1,24 +1,18 @@
 ﻿#pragma once
 
+#include <AixCommon/AbsServer.h>
 #include <iostream>
 
 namespace aix {
 	
+
 	
-	class AixServer {
+	class Server: public AbsServer<int> {
 		public:
 
-		AixServer(int port) {
-		
+		Server(int port): AbsServer(port) {		
 		};
 
-		bool Start() {
-
-		}
-
-		void Stop() {
-
-		}
 	};
 
 

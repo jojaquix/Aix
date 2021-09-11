@@ -16,6 +16,9 @@ TEST(BasicTests, BasicAssertions) {
 
 TEST(BasicTests, BasicServerTest) {
 	EXPECT_EQ(7 * 6, 42);
-	AixServer server(9876);
+	Server server(8765);
+	server.start();
+	getchar();
+	server.stop();
 
 }
