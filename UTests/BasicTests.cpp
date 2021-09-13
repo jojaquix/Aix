@@ -1,10 +1,14 @@
 #include <gtest/gtest.h>
 #include <AixServer/Server.h>
 #include <AixClient/Client.h>
+#include <AixCommon/message.h>
 
 //for testing
 using namespace aix;
 using namespace std;
+
+
+
 
 // Demonstrate some basic assertions.
 TEST(BasicTests, BasicAssertions) {
@@ -12,6 +16,14 @@ TEST(BasicTests, BasicAssertions) {
 	EXPECT_STRNE("hello", "world");
 	// Expect equality.
 	EXPECT_EQ(7 * 6, 42);
+}
+
+
+
+TEST(BasicTests, MessageTest) {
+
+	message<MsgTypes> msg;
+
 }
 
 TEST(BasicTests, BasicClientTest) {

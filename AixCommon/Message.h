@@ -1,4 +1,7 @@
+#pragma once
+
 #include<AixCommon/Common.h>
+#include <AixCommon/conn.h>
 
 namespace aix {
 	template <typename T>
@@ -36,4 +39,20 @@ namespace aix {
 			return msg;
 		}
 	};
+
+  /*
+	struct owned_message
+	{
+		std::shared_ptr<connection<T>> remote = nullptr;
+		message<T> msg;
+
+		friend std::ostream& operator<<(std::ostream& os, const owned_message<T>& msg)
+		{
+			os << msg.msg;
+			return os;
+		}
+	};
+
+	*/
+
 }

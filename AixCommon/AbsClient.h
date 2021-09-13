@@ -29,7 +29,7 @@ namespace aix {
 				//asio::ip::tcp::endpoint endpoint(asio::ip::address::from_string(address), port);
 				asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(address, std::to_string(port));
 				
-				conn = std::make_unique<connection<T>>(asioContext, asio::ip::tcp::socket(asioContext));
+				conn = std::make_unique<connection<T>>(true, asioContext, asio::ip::tcp::socket(asioContext));
 				conn->connectToServer(endpoints);
 				theThread = std::thread([this]() { asioContext.run(); });
 			}

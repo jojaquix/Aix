@@ -12,7 +12,14 @@ namespace aix {
 	public:
 		TsMap() = default;
 		TsMap(const TsMap<T>&) = delete;
-		virtual ~TsMap() { Clear(); };
+		virtual ~TsMap() { clear(); };
+
+		
+
+
+
+	private:
+		std::unordered_map<T> theMap;
 
  
 	

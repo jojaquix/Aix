@@ -49,7 +49,7 @@ namespace aix {
 					{					
 						std::cout << "[AixServer::Trace] New Connection Ok: " << socket.remote_endpoint() << "\n";
 						// Socket Wrapper conn to handle the client
-						auto newconn = std::make_shared<connection<T>>(asioContext, std::move(socket));
+						auto newconn = std::make_shared<connection<T>>(false, asioContext, std::move(socket));
 						if (onClientConnect(newconn)) {
 							//todo store new connection in some place
 							//container to allow us 
