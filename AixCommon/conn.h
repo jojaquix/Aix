@@ -21,18 +21,35 @@ namespace aix{
 	template<typename T>
 	class connection : public std::enable_shared_from_this<connection<T>> {
 	public:		
-		connection(bool is_connection_to_server, asio::io_context& asio_context, asio::ip::tcp::socket socket)
-			: asio_context(asio_context), socket(std::move(socket)), is_connection_to_server(is_connection_to_server)
+		connection(	bool is_connection_to_server, 
+					asio::io_context& asio_context,	
+					asio::ip::tcp::socket socket,
+					TsQueue<owned_message<T>>& qMessageIn
+					)
+			: asio_context(asio_context), 
+			socket(std::move(socket)),
+			qMessagesIn(qMessageIn),			
+			is_connection_to_server(is_connection_to_server)
 		{
 		}
+
+		std::string getId() const
+		{
+			return client_id;
+		}
+
+		void setId(std::string id) {
+			client_id = id;
+		}
+
 
 
 		void connectToClient(std::string client_id) {
 			if (!this->is_connection_to_server) {
-				if (m_socket.is_open())
+				if (socket.is_open())
 				{
 					client_id = client_id;
-					ReadHeader();
+					asyncReadHeader();
 				}
 			}
 			else {
@@ -45,7 +62,7 @@ namespace aix{
 				asio::async_connect(socket, endpoints,
 					[this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 						if (!ec) {
-							//asyncReadHeader();
+							asyncReadHeader();
 						}
 					});
 			}
@@ -70,12 +87,27 @@ namespace aix{
 			}
 		}
 
+		void send(const message<T>& msg)
+		{
+			asio::post(asio_context,
+				[this, msg]()
+				{
+					bool writingMessage = !qMessagesOut.empty();
+					qMessagesOut.push_back(msg);
+					if (!writingMessage)
+					{
+						asyncWriteHeader();
+					}
+				});
+		}
+
+
 
 	private:
-		/*
+		
 		void asyncReadHeader()
 		{
-			asio::async_read(m_socket, asio::buffer(&tempInMsg.header, sizeof(mheader<T>)),
+			asio::async_read(socket, asio::buffer(&tempInMsg.header, sizeof(mheader<T>)),
 				[this](std::error_code ec, std::size_t length)
 				{
 					if (!ec)
@@ -87,13 +119,13 @@ namespace aix{
 						}
 						else
 						{
-							processIncomingMessage();
+							enqueueIncomingMessage();
 						}
 					}
 					else
 					{
-						std::cout << "[" << id << "] fail reading header" << std::endl;
-						m_socket.close();
+						std::cout << "[" << client_id << "] fail reading header" << std::endl;
+						socket.close();
 					}
 				});
 		}
@@ -101,31 +133,84 @@ namespace aix{
 		
 		void asyncReadBody()
 		{
-			asio::async_read(m_socket, asio::buffer(tempInMsg.body.data(), tempInMsg.body.size()),
+			asio::async_read(socket, asio::buffer(tempInMsg.body.data(), tempInMsg.body.size()),
 				[this](std::error_code ec, std::size_t length)
 				{
 					if (!ec)
 					{
-						processIncomingMessage();
+						enqueueIncomingMessage();
 					}
 					else
 					{
 						
-						std::cout << "[" << id << "] fail reading body" << std::endl;
-						m_socket.close();
+						std::cout << "[" << client_id << "] fail reading body" << std::endl;
+						socket.close();
 					}
 				});
 		}
 
-
-		void processIncomingMessage() {
-			
+		void enqueueIncomingMessage() {			
 			//store incomming message and wait for more
-
+			
+			if (this->is_connection_to_server)
+				qMessagesIn.push_back({ nullptr, tempInMsg });
+			else
+				qMessagesIn.push_back({ this->shared_from_this(), tempInMsg });
+			
+		
 			asyncReadHeader();
 		}
-		*/
 
+		void asyncWriteHeader()
+		{
+			asio::async_write(socket, asio::buffer(&qMessagesOut.front().header, sizeof(mheader<T>)),
+				[this](std::error_code ec, std::size_t length)
+				{
+					if (!ec)
+					{
+						//if the message has body
+						if (qMessagesOut.front().body.size() > 0)
+						{
+							asyncWriteBody();
+						}
+						else
+						{
+							qMessagesOut.pop_front();
+							if (!qMessagesOut.empty())
+							{
+								asyncWriteHeader();
+							}
+						}
+					}
+					else
+					{
+						std::cout << "[" << client_id << "] fail write header." << std::endl;
+						socket.close();
+					}
+				});
+		}
+
+		void asyncWriteBody()
+		{
+			asio::async_write(socket, asio::buffer(qMessagesOut.front().body.data(), qMessagesOut.front().body.size()),
+				[this](std::error_code ec, std::size_t length)
+				{
+					if (!ec)
+					{
+						qMessagesOut.pop_front();
+						if (!qMessagesOut.empty())
+						{
+							asyncWriteHeader();
+						}
+					}
+					else
+					{
+						std::cout << "[" << client_id << "] fail write body." << std::endl;
+						socket.close();
+					}
+				});
+		}
+		
 
 		asio::io_context& asio_context;
 		asio::ip::tcp::socket socket;
@@ -133,7 +218,7 @@ namespace aix{
 
 		std::string client_id;
 		TsQueue<message<T>> qMessagesOut;
-		//TsQueue<owned_message<T>>& qMessagesIn;
+		TsQueue<owned_message<T>>& qMessagesIn;
 		message<T> tempInMsg;
 	};
 }

@@ -8,7 +8,7 @@ namespace aix {
 	struct mheader
 	{
 		T mtype{};
-		uint32_t size = 0; //size of message including header and body
+		size_t size = 0; //size of message including header and body
 	};
 
 	template <typename T>
@@ -16,16 +16,21 @@ namespace aix {
 	{
 		mheader<T> header{};
 		std::vector<uint8_t> body;
+
+		size_t size() const
+		{
+			return body.size();
+		}
 		
 		template<typename DataType>
 		friend message<T>& operator << (message<T>& msg, const DataType& data)
 		{
-			static_assert(std::is_standard_layout<DataType>::value, "Only simple for messages types")
+			static_assert(std::is_standard_layout<DataType>::value, "Only simple for messages types");
 			size_t i = msg.body.size();
 			msg.body.resize(msg.body.size() + sizeof(DataType));
 			std::memcpy(msg.body.data() + i, &data, sizeof(DataType));
 			msg.header.size = msg.size();
-			return sg;
+			return msg;
 		}
 
 		template<typename DataType>
@@ -40,7 +45,11 @@ namespace aix {
 		}
 	};
 
-  /*
+	template <typename T>
+	class connection;
+
+	
+	template <typename T>
 	struct owned_message
 	{
 		std::shared_ptr<connection<T>> remote = nullptr;
@@ -52,7 +61,5 @@ namespace aix {
 			return os;
 		}
 	};
-
-	*/
 
 }

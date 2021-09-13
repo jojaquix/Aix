@@ -17,19 +17,17 @@ namespace aix {
 			disconnect();
 		}
 
-		//run on io thread
-		virtual bool onConnect(std::shared_ptr<connection<T>>) {
-			return false;
-		}
-
 		bool connect(int port, std::string address) {
 			try
 			{
 				asio::ip::tcp::resolver resolver(asioContext);
-				//asio::ip::tcp::endpoint endpoint(asio::ip::address::from_string(address), port);
 				asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(address, std::to_string(port));
 				
-				conn = std::make_unique<connection<T>>(true, asioContext, asio::ip::tcp::socket(asioContext));
+				conn = std::make_unique<connection<T>>(true, 
+					asioContext, 
+					asio::ip::tcp::socket(asioContext),
+					qMessagesIn);
+
 				conn->connectToServer(endpoints);
 				theThread = std::thread([this]() { asioContext.run(); });
 			}
@@ -55,10 +53,34 @@ namespace aix {
 				conn.release();
 			}
 		}
+
+		bool isConnected()
+		{
+			if (conn)
+				return conn->isConnected();
+			else
+				return false;
+		}
+
+		void send(const message<T>& msg)
+		{
+			if (isConnected())
+				conn->send(msg);
+		}
+		 
+		TsQueue<owned_message<T>>& incomingQueue() {
+			return qMessagesIn;
+		}
+		
 	
 	protected:
+	
 		asio::io_context asioContext;
 		std::thread theThread;
 		std::unique_ptr<connection<T>> conn;
+
+	private:
+		TsQueue<owned_message<T>> qMessagesIn;
+
 	};
 }

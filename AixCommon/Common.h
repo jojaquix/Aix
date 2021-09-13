@@ -10,8 +10,12 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <array>
 
 namespace aix {
+	
+	const int USER_NAME_MAX_SIZE = 256;
+	
 	enum class MsgTypes : uint32_t
 	{
 		//Messages from Server to Clients
@@ -24,7 +28,7 @@ namespace aix {
 
 	struct user_info {
 		uint8_t id;
-		std::string name;
+		char name[USER_NAME_MAX_SIZE];
 	};
 	
 }

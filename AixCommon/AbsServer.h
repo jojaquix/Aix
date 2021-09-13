@@ -2,8 +2,16 @@
 
 #include <AixCommon/Common.h>
 #include <AixCommon/conn.h>
+#include <random>
+#include <sstream>
+
 
 namespace aix {
+	static std::random_device              rd;
+	static std::mt19937                    gen(rd());
+	static std::uniform_int_distribution<> dis(0, 15);
+	static std::uniform_int_distribution<> dis2(8, 11);
+
 	// base clase for asio based server
 	// for messages<T>
 	template<typename T>
@@ -19,10 +27,7 @@ namespace aix {
 			stop();
 		}
 
-		//run on server thread
-		virtual bool onClientConnect(std::shared_ptr<connection<T>>) {
-			return false;
-		}
+
 
 		bool start() {
 			try
@@ -41,6 +46,33 @@ namespace aix {
 			return true;
 		}
 
+		std::string getNextId() {
+			std::stringstream ss;
+			int i;
+			ss << std::hex;
+			for (i = 0; i < 8; i++) {
+				ss << dis(gen);
+			}
+			ss << "-";
+			for (i = 0; i < 4; i++) {
+				ss << dis(gen);
+			}
+			ss << "-4";
+			for (i = 0; i < 3; i++) {
+				ss << dis(gen);
+			}
+			ss << "-";
+			ss << dis2(gen);
+			for (i = 0; i < 3; i++) {
+				ss << dis(gen);
+			}
+			ss << "-";
+			for (i = 0; i < 12; i++) {
+				ss << dis(gen);
+			};
+			return ss.str();
+		}
+
 		// [async]
 		void asyncWaitForConnection() {
 			asioAcceptor.async_accept(
@@ -49,11 +81,18 @@ namespace aix {
 					{					
 						std::cout << "[AixServer::Trace] New Connection Ok: " << socket.remote_endpoint() << "\n";
 						// Socket Wrapper conn to handle the client
-						auto newconn = std::make_shared<connection<T>>(false, asioContext, std::move(socket));
+						auto newconn = std::make_shared<connection<T>>(false, 
+							asioContext, 
+							std::move(socket),
+							qMessagesIn);
+
 						if (onClientConnect(newconn)) {
-							//todo store new connection in some place
-							//container to allow us 
-							std::cout << "[AixServer::Trace] Connection Approved\n";
+							auto id = getNextId();
+							newconn->setId(id);
+							deqConnections.push_back(std::move(newconn));
+							deqConnections.back()->connectToClient(id);
+
+							std::cout << "[AixServer::Trace] Connection Approved for " << id << std::endl;
 						}
 						else {
 							std::cout << "[AixServer::Trace] Connection Denied\n";
@@ -77,11 +116,59 @@ namespace aix {
 				std::cout << "[AixServer::Trace] Stopped!\n";
 			}
 		}
-	
 
-		//Server receive a message and send message as response
-		//virtual message<T> onMessageIn(message<T>& msg) { return msg }
+		void messageToClient(std::shared_ptr<connection<T>> client, const message<T>& msg)
+		{
+			// Check client is legitimate...
+			if (client && client->isConnected())
+			{
+				// ...and post the message via the connection
+				client->send(msg);
+			}
+			else
+			{
+				onClientDisconnect(client);
+				client.reset();
+				deqConnections.erase(
+					std::remove(m_deqConnections.begin(), m_deqConnections.end(), client), m_deqConnections.end());
+			}
+		}
+
+		// Force server to respond to incoming messages
+		void update(size_t nMaxMessages = -1, bool bWait = false)
+		{
+			if (bWait) qMessagesIn.wait();
+
+			size_t nMessageCount = 0;
+			while (nMessageCount < nMaxMessages && !qMessagesIn.empty())
+			{
+				// Grab the front message
+				auto msg = qMessagesIn.pop_front();
+				// Pass to message handler
+				onMessage(msg.remote, msg.msg);
+				nMessageCount++;
+			}
+		}
+
+
+
+		//Api for 
+		//run on server thread
+		
+		virtual bool onClientConnect(std::shared_ptr<connection<T>>) {
+			return false;
+		}
+		//run on server thread
+		virtual void onMessage(std::shared_ptr<connection<T>> client, message<T>& msg)
+		{
+
+		}
+
 	protected:
+
+		TsQueue<owned_message<T>> qMessagesIn;
+		std::deque<std::shared_ptr<connection<T>>> deqConnections;
+
 		asio::io_context asioContext;
 		std::thread theThread;
 		asio::ip::tcp::acceptor asioAcceptor;
