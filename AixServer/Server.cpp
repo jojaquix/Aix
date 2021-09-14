@@ -5,6 +5,7 @@
 #include <AixCommon/Common.h>
 
 using namespace std;
+using namespace aix;
 
 int main(int argn, char* argv[])
 {
@@ -18,5 +19,19 @@ int main(int argn, char* argv[])
 	}
 
 	cout << "Starting server on port " << port << endl;
+
+	Server<MsgTypes> server(port);
+	server.start();
+	server.resetSecsFromLastMessage();
+	
+	//wait up to 60 seconds for new messages
+	while (server.secsFromLastMessage() < 60) {		
+		server.update(-1, 2);
+	}
+
+	cout << "Stopping server due no messages!! \n";	
+	server.stop();
+	server.saveUsersList("users_list.txt");
+
 	return 0;
 }

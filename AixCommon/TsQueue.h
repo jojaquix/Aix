@@ -3,6 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 
 //low lever thread safe queue
@@ -89,7 +90,20 @@ public:
 		while (empty())
 		{
 			std::unique_lock<std::mutex> ul(muxBlocking);
-			cvBlocking.wait(ul);
+			cvBlocking.wait(ul);			
+		}
+	}
+
+	void wait_for_secs(uint16_t seconds)
+	{		
+		auto t1 = std::chrono::system_clock::now();		
+		auto t2 = ((std::chrono::system_clock::now() - t1) / std::chrono::seconds(1));
+		
+		while (empty() &&  t2 < seconds)
+		{
+			std::unique_lock<std::mutex> ul(muxBlocking);
+			cvBlocking.wait_for(ul, std::chrono::seconds(seconds));
+			t2 = ((std::chrono::system_clock::now() - t1) / std::chrono::seconds(1));
 		}
 	}
 

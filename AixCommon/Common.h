@@ -18,8 +18,7 @@ namespace aix {
 	
 	enum class MsgTypes : uint32_t
 	{
-		//Messages from Server to Clients
-		SetClientId,
+		//Messages from Server to Clients		
 		UserInsertOk,
 		UserDuplicate,
 		//Messages from Client to Server
@@ -29,7 +28,15 @@ namespace aix {
 	struct user_info {
 		uint8_t id;
 		char name[USER_NAME_MAX_SIZE];
+
+		friend std::ostream& operator<<(std::ostream& os, const user_info& ui)
+		{
+			os << "user: "<< ui.name <<" ,id: " << (int)ui.id;
+			return os;
+		}
 	};
+
+
 	
 }
 

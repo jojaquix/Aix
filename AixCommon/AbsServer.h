@@ -34,6 +34,7 @@ namespace aix {
 			{
 				asyncWaitForConnection();
 				// todo i want to change this to use a thread pool 
+				// just declare an vector of threads and run asio run()				
 				theThread = std::thread([this]() { asioContext.run(); });
 			}
 			catch (std::exception& e)
@@ -117,7 +118,7 @@ namespace aix {
 			}
 		}
 
-		void messageToClient(std::shared_ptr<connection<T>> client, const message<T>& msg)
+		void sendMessageToClient(std::shared_ptr<connection<T>> client, const message<T>& msg)
 		{
 			// Check client is legitimate...
 			if (client && client->isConnected())
@@ -130,14 +131,22 @@ namespace aix {
 				onClientDisconnect(client);
 				client.reset();
 				deqConnections.erase(
-					std::remove(m_deqConnections.begin(), m_deqConnections.end(), client), m_deqConnections.end());
+					std::remove(deqConnections.begin(), deqConnections.end(), client), deqConnections.end());
 			}
 		}
 
-		// Force server to respond to incoming messages
-		void update(size_t nMaxMessages = -1, bool bWait = false)
+		// Force server to respond to incoming messages,
+		// secsToWait = 0 timeout inf
+		// secsToWai < 0 not wait
+
+		void update(size_t nMaxMessages = -1, int secsToWait = 0)
 		{
-			if (bWait) qMessagesIn.wait();
+			if (secsToWait > 0) {
+				qMessagesIn.wait_for_secs(secsToWait);
+			}
+			else if(secsToWait == 0) {
+				qMessagesIn.wait();
+			}
 
 			size_t nMessageCount = 0;
 			while (nMessageCount < nMaxMessages && !qMessagesIn.empty())
@@ -160,6 +169,11 @@ namespace aix {
 		}
 		//run on server thread
 		virtual void onMessage(std::shared_ptr<connection<T>> client, message<T>& msg)
+		{
+
+		}
+
+		virtual void onClientDisconnect(std::shared_ptr<connection<T>> client)
 		{
 
 		}

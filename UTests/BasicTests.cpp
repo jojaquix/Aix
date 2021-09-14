@@ -40,6 +40,7 @@ TEST(BasicTests, TsMapTest) {
 
 TEST(BasicTests, BasicServerTest) {
 		
+	
 	message<MsgTypes> msg;
 	msg.header.mtype = MsgTypes::InsertUser;
 	user_info usr = { 230, "user 1" };
@@ -47,25 +48,30 @@ TEST(BasicTests, BasicServerTest) {
 	
 	Server<MsgTypes> server(8765);
 	server.start();
-
+	server.resetSecsFromLastMessage();
+	
+	server.update(-1, -1);
 	
 	std::thread srvThread([&server]{
-		while (true) {
-			server.update(-1, true);
+		while (server.secsFromLastMessage() < 60) {
+		//while (true) {
+			server.update(-1, 5);			
 		}
 	});
 
 
+	//srvThread.join();
+	//std::cout << "server finished!! \n";
+
 	Client<MsgTypes> client("user");
-	client.connect(8765, "localhost");
-	//server.update(-1, false);	
+	client.connect(8765, "localhost");	
+	std::cout << "press key to start sending messages!! \n";
 	getchar();
 	
 	while (client.hasMoreIds()) {
 		client.sendUserAndCheckResponse();
 	}
-	
-	//server.update(-1, true);
+		
 	getchar();
 	server.stop();
 }
